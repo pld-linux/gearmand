@@ -1,3 +1,5 @@
-### Settings for gearmand
-# OPTIONS=""
+#
+# Settings for gearmand
+#
 
+#OPTIONS=""

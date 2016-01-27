@@ -1,55 +1,79 @@
-#!/bin/bash
+#!/bin/sh
 #
 # gearmand        Startup script for the Gearman server
 #
-# chkconfig: - 85 15
+# chkconfig:	345 85 15
+#
 # description: Gearman is a distributed job system.
 # processname: gearmand
 # config: /etc/sysconfig/gearmand
 # pidfile: /var/run/gearmand/gearmand.pid
 #
-### BEGIN INIT INFO
-# Provides: gearmand
-# Required-Start: $local_fs $network
-# Required-Stop: $local_fs $network
-# Default-Start:
-# Default-Stop:
-# Short-Description: start and stop the Gearman server
-# Description: Gearman is a distributed job system.
-### END INIT INFO
 
-# Source function library.
+# Source function library
 . /etc/rc.d/init.d/functions
 
-if [ -f /etc/sysconfig/gearmand ]; then
-        . /etc/sysconfig/gearmand
+# Get network config
+. /etc/sysconfig/network
+
+# Check that networking is up.
+if is_yes "${NETWORKING}"; then
+	if [ ! -f /var/lock/subsys/network -a "$1" != stop -a "$1" != status ]; then
+		msg_network_down "Gearmand job server"
+		exit 1
+	fi
+else
+	exit 0
 fi
 
-[ -z "${PIDFILE}" ] && pidfile="/var/run/gearmand/gearmand.pid"
-[ -z "${LOCKFILE}" ] && lockfile="/var/lock/subsys/gearmand"
+# Set defaults
+OPTIONS=""
 
-gearmand=/usr/sbin/gearmand
-prog=gearmand
+# Get service config - may override defaults
+[ -f /etc/sysconfig/gearmand ] && . /etc/sysconfig/gearmand
 
-RETVAL=0
+pidfile="/var/run/gearmand.pid"
+lockfile="/var/lock/subsys/gearmand"
+gearmand="/usr/sbin/gearmand"
+procname="gearmand"
 
 start() {
-        echo -n $"Starting $prog: "
-        daemon --pidfile=$pidfile --user=gearmand $gearmand -d $OPTIONS
-        RETVAL=$?
-        echo
-        [ $RETVAL = 0 ] && (touch $lockfile; pgrep -f $gearmand > $pidfile)
-        return $RETVAL
+	# Check if the service is already running?
+	if [ -f $lockfile ]; then
+		msg_already_running "Gearmand job server"
+		return
+	fi
+
+	msg_starting "Gearmand job server"
+	daemon --pidfile $pidfile --user gearmand $gearmand -d $OPTIONS
+	RETVAL=$?
+	[ $RETVAL -eq 0 ] && touch $lockfile
 }
 
 stop() {
-	echo -n $"Stopping $prog: "
-	killproc -p $pidfile $gearmand
-	RETVAL=$?
-	echo
-	[ $RETVAL = 0 ] && rm -f $lockfile $pidfile
+	if [ ! -f $lockfile ]; then
+		msg_not_running "Gearmand job server"
+		return
+	fi
+
+	# Stop daemons.
+	msg_stopping "Gearmand job server"
+	killproc --pidfile $pidfile $procname -TERM
+	rm -f $lockfile
 }
 
+condrestart() {
+	if [ ! -f $lockfile ]; then
+		msg_not_running "Gearmand job server"
+		RETVAL=$1
+		return
+	fi
+
+	stop
+	start
+}
+
+RETVAL=0
 # See how we were called.
 case "$1" in
   start)
@@ -58,24 +82,23 @@ case "$1" in
   stop)
 	stop
 	;;
-  status)
-        status -p $pidfile $gearmand
-	RETVAL=$?
-	;;
-  restart|reload)
+  restart)
 	stop
 	start
 	;;
-  condrestart|try-restart)
-	if status -p $pidfile $gearmand >&/dev/null; then
-		stop
-		start
-	fi
+  try-restart)
+	condrestart 0
+	;;
+  force-reload)
+	condrestart 7
+	;;
+  status)
+	status --pidfile $pidfile $procname
+	RETVAL=$?
 	;;
   *)
-	echo $"Usage: $prog {start|stop|restart|reload|condrestart|status|help}"
-	RETVAL=3
+	msg_usage "$0 {start|stop|restart|try-restart|force-reload|status}"
+	exit 3
 esac
 
 exit $RETVAL
-
