@@ -119,20 +119,14 @@ rm -rf $RPM_BUILD_ROOT
 
 rm -v $RPM_BUILD_ROOT%{_libdir}/libgearman*.la
 
-install -p -D %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/gearmand
+install -d $RPM_BUILD_ROOT/etc/{rc.d/init.d,sysconfig} \
+	$RPM_BUILD_ROOT{%{_sysconfdir}/%{name},%{systemdunitdir}} \
+	$RPM_BUILD_ROOT/var/{run/gearmand,log}
 
-# install systemd unit file
-install -d $RPM_BUILD_ROOT%{systemdunitdir}
+cp -p %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/gearmand
 cp -p %{SOURCE3} $RPM_BUILD_ROOT%{systemdunitdir}/%{name}.service
-
-# install legacy SysV init script
-install -p -D %{SOURCE1} $RPM_BUILD_ROOT%{_initrddir}/gearmand
-install -d $RPM_BUILD_ROOT/var/run/gearmand
-
-install -d $RPM_BUILD_ROOT/var/log
+install -p %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/gearmand
 touch $RPM_BUILD_ROOT/var/log/gearmand.log
-
-install -d $RPM_BUILD_ROOT/var/run/gearmand
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -166,19 +160,17 @@ fi
 %files
 %defattr(644,root,root,755)
 %doc README
-%attr(755,gearmand,gearmand) /var/run/gearmand
+%attr(754,root,root) /etc/rc.d/init.d/gearmand
 %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/gearmand
 %attr(755,root,root) %{_sbindir}/gearmand
 %attr(755,root,root) %{_bindir}/gearman
 %attr(755,root,root) %{_bindir}/gearadmin
-%{_mandir}/man1/*
-%{_mandir}/man8/*
-%attr(640,gearmand,gearmand) %config(noreplace) %verify(not md5 mtime size) /var/log/gearmand.log
-%if %{with systemd}
+%{_mandir}/man1/gearadmin.1*
+%{_mandir}/man1/gearman.1*
+%{_mandir}/man8/gearmand.8*
 %{systemdunitdir}/%{name}.service
-%else
-%{_initrddir}/%{name}
-%endif
+%dir %attr(755,gearmand,gearmand) /var/run/gearmand
+%attr(640,gearmand,gearmand) %config(noreplace) %verify(not md5 mtime size) /var/log/gearmand.log
 
 %files -n libgearman
 %defattr(644,root,root,755)
@@ -189,9 +181,9 @@ fi
 %files -n libgearman-devel
 %defattr(644,root,root,755)
 %doc AUTHORS ChangeLog
-%dir %{_includedir}/libgearman
-%{_includedir}/libgearman/*.h
+%{_includedir}/libgearman
 %{_pkgconfigdir}/gearmand.pc
 %{_libdir}/libgearman.so
 %{_includedir}/libgearman-1.0
-%{_mandir}/man3/*
+%{_mandir}/man3/gearman_*
+%{_mandir}/man3/libgearman.3*
