@@ -23,7 +23,7 @@
 Summary:	A distributed job system
 Name:		gearmand
 Version:	1.1.12
-Release:	0.1
+Release:	0.2
 License:	BSD
 Group:		Daemons
 Source0:	https://launchpad.net/gearmand/1.2/%{version}/+download/%{name}-%{version}.tar.gz
@@ -184,7 +184,7 @@ fi
 %{_mandir}/man1/gearman.1*
 %{_mandir}/man8/gearmand.8*
 %{systemdunitdir}/%{name}.service
-%dir %attr(755,gearmand,gearmand) /var/run/gearmand
+%dir %attr(771,root,gearmand) /var/run/gearmand
 %attr(640,gearmand,gearmand) %config(noreplace) %verify(not md5 mtime size) /var/log/gearmand.log
 
 %files -n libgearman
