@@ -149,26 +149,21 @@ rm -rf $RPM_BUILD_ROOT
 %groupadd -g 328 gearmand
 %useradd -u 328 -g gearmand -d / -s /sbin/nologin -c "Gearmand job server" gearmand
 
-%if 0
 %post
+test -e /var/log/gearmand.log || touch /var/log/gearmand.log
+/sbin/chkconfig --add gearmand
+%service gearmand restart
 %systemd_post gearmand.service
-if [ $1 = 1 ]; then
-	/sbin/chkconfig --add gearmand
-fi
-touch /var/log/gearmand.log
 
 %preun
-%systemd_preun gearmand.service
 if [ "$1" = 0 ] ; then
 	%service gearmand stop
 	/sbin/chkconfig --del gearmand
 fi
+%systemd_preun gearmand.service
 
 %postun
-%systemd_postun_with_restart gearmand.service
-%endif
-
-%postun
+%systemd_reload
 if [ "$1" = "0" ]; then
 	%userremove gearmand
 	%groupremove gearmand
