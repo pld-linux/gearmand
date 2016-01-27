@@ -1,7 +1,6 @@
 # TODO
 # - fix make install linking stuff over again
 # - skip tests build if testing disabled
-# - add gearman user/group
 # - libpq vs postgresql, which one matters?
 #
 # Conditional build:
@@ -53,8 +52,16 @@ BuildRequires:	zlib-devel
 BuildRequires:	curl-devel
 BuildRequires:	mysql-server
 %endif
+Provides:	group(gearmand)
+Provides:	user(gearmand)
 Requires(post,preun):	/sbin/chkconfig
 Requires(post,preun,postun):	systemd-units >= 38
+Requires(postun):	/usr/sbin/groupdel
+Requires(postun):	/usr/sbin/userdel
+Requires(pre):	/bin/id
+Requires(pre):	/usr/bin/getgid
+Requires(pre):	/usr/sbin/groupadd
+Requires(pre):	/usr/sbin/useradd
 Requires:	procps
 Requires:	rc-scripts
 Requires:	systemd-units >= 0.38
@@ -138,11 +145,11 @@ touch $RPM_BUILD_ROOT/var/log/gearmand.log
 %clean
 rm -rf $RPM_BUILD_ROOT
 
-%if 0
 %pre
-%groupadd -r gearmand
-%useradd -r -g gearmand -d / -s /sbin/nologin -c "Gearmand job server" gearmand
+%groupadd -g 328 gearmand
+%useradd -u 328 -g gearmand -d / -s /sbin/nologin -c "Gearmand job server" gearmand
 
+%if 0
 %post
 %systemd_post gearmand.service
 if [ $1 = 1 ]; then
@@ -160,6 +167,12 @@ fi
 %postun
 %systemd_postun_with_restart gearmand.service
 %endif
+
+%postun
+if [ "$1" = "0" ]; then
+	%userremove gearmand
+	%groupremove gearmand
+fi
 
 %post	-n libgearman -p /sbin/ldconfig
 %postun	-n libgearman -p /sbin/ldconfig
