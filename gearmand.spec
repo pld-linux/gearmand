@@ -2,21 +2,23 @@
 # - fix make install linking stuff over again
 # - skip tests build if testing disabled
 # - add gearman user/group
+# - libpq vs postgresql, which one matters?
 #
 # Conditional build:
 %bcond_with	tests		# build with tests
 %bcond_without	gperftools	# gperftools
-%bcond_without	sqlite		# sqlite
-%bcond_without	tokyocabinet	# tokyocabinet
-%bcond_with	tcmalloc	# tcmalloc
+%bcond_without	sqlite3		# use SQLite 3 library [default=yes]
+%bcond_without	libtokyocabinet	# Build with libtokyocabinet support [default=on]
+%bcond_without	libmemcached	# Build with libmemcached support [default=on]
+%bcond_without	hiredis	# Build with hiredis support [default=on]
+%bcond_without	libpq	# Build with libpq, ie Postgres, support [default=on]
+%bcond_without	mysql	# use MySQL client library [default=yes]
+%bcond_without	postgresql	# use PostgreSQL library [default=yes]
+%bcond_with	libdrizzle	# Build with libdrizzle support [default=on]
 
 # google perftools available only on these
 %ifnarch %{ix86} x86_64 ppc64 ppc64le aarch64 %{arm}
 %undefine	with_gperftools
-%endif
-
-%ifarch ppc64 sparc64
-%undefine	with_tcmalloc
 %endif
 
 Summary:	A distributed job system
@@ -35,15 +37,16 @@ URL:		http://www.gearman.org
 BuildRequires:	boost-devel >= 1.37.0
 BuildRequires:	gperf
 %{?with_gperftools:BuildRequires:	gperftools-devel}
+%{?with_hiredis:BuildRequires:	hiredis-devel}
 BuildRequires:	libevent-devel
-BuildRequires:	libmemcached-devel
+%{?with_libmemcached:BuildRequires:	libmemcached-devel}
 BuildRequires:	libuuid-devel
-#BuildRequires:	memcached
-BuildRequires:	mysql-devel
+%{?with_mysql:BuildRequires:	mysql-devel}
 BuildRequires:	pkgconfig
 BuildRequires:	postgresql-devel
+%{?with_libpq:BuildRequires:	postgresql-devel}
 BuildRequires:	rpmbuild(macros) >= 1.647
-%{?with_sqlite:BuildRequires:	sqlite3-devel}
+%{?with_sqlite3:BuildRequires:	sqlite3-devel}
 %{?with_tokyocabinet:BuildRequires:	tokyocabinet-devel}
 BuildRequires:	zlib-devel
 %if %{with tests}
@@ -96,15 +99,19 @@ Development headers for %{name}.
 %patch0 -p1
 
 %build
-# HACK to work around boost issues.
-#export LDFLAGS="%{rpmldflags} LDFLAGS -lboost_system"
-
 %configure \
 	--disable-silent-rules \
 	--disable-static \
-%if %{with tcmalloc}
-	--enable-tcmalloc \
-%endif
+	%{__enable_disable hiredis} \
+	%{__enable_disable libdrizzle} \
+	%{__enable_disable libmemcached} \
+	%{__enable_disable libpq} \
+	%{__enable_disable libtokyocabinet} \
+	%{__with_without mysql} \
+	%{__with_without postgresql} \
+	%{__with_without sqlite3} \
+	--enable-ssl \
+	--disable-dtrace
 
 %{__make}
 
