@@ -23,7 +23,7 @@
 Summary:	A distributed job system
 Name:		gearmand
 Version:	1.1.12
-Release:	0.2
+Release:	0.3
 License:	BSD
 Group:		Daemons
 Source0:	https://launchpad.net/gearmand/1.2/%{version}/+download/%{name}-%{version}.tar.gz
