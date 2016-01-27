@@ -33,8 +33,6 @@ Source3:	%{name}.service
 Patch0:		%{name}-1.1.12-ppc64le.patch
 URL:		http://www.gearman.org
 BuildRequires:	boost-devel >= 1.37.0
-BuildRequires:	boost-thread
-BuildRequires:	e2fsprogs-devel
 BuildRequires:	gperf
 %{?with_gperftools:BuildRequires:	gperftools-devel}
 BuildRequires:	libevent-devel
@@ -42,10 +40,10 @@ BuildRequires:	libmemcached-devel
 BuildRequires:	libuuid-devel
 #BuildRequires:	memcached
 BuildRequires:	mysql-devel
+BuildRequires:	pkgconfig
 BuildRequires:	postgresql-devel
 BuildRequires:	rpmbuild(macros) >= 1.647
 %{?with_sqlite:BuildRequires:	sqlite3-devel}
-BuildRequires:	systemd-units
 %{?with_tokyocabinet:BuildRequires:	tokyocabinet-devel}
 BuildRequires:	zlib-devel
 %if %{with tests}
