@@ -25,7 +25,7 @@
 Summary:	A distributed job system
 Name:		gearmand
 Version:	1.1.12
-Release:	1
+Release:	2
 License:	BSD
 Group:		Daemons
 Source0:	https://launchpad.net/gearmand/1.2/%{version}/+download/%{name}-%{version}.tar.gz
@@ -35,12 +35,16 @@ Source2:	%{name}.sysconfig
 Source3:	%{name}.service
 Patch0:		%{name}-1.1.12-ppc64le.patch
 URL:		http://www.gearman.org
+BuildRequires:	autoconf
+BuildRequires:	autoconf-archive
+BuildRequires:	automake
 BuildRequires:	boost-devel >= 1.37.0
 BuildRequires:	gperf
 %{?with_gperftools:BuildRequires:	gperftools-devel}
 %{?with_hiredis:BuildRequires:	hiredis-devel}
 BuildRequires:	libevent-devel
 %{?with_libmemcached:BuildRequires:	libmemcached-devel}
+BuildRequires:	libtool
 BuildRequires:	libuuid-devel
 %{?with_mysql:BuildRequires:	mysql-devel}
 BuildRequires:	pkgconfig
@@ -107,7 +111,17 @@ Development headers for %{name}.
 %setup -q
 %patch0 -p1
 
+cp -p %{_aclocaldir}/ax_boost_base.m4 m4
+cp -p %{_aclocaldir}/ax_boost_program_options.m4 m4
+
+# somewhy it does not look into build-aux
+ln -s build-aux/install-sh .
+
 %build
+%{__libtoolize}
+%{__aclocal} -I m4
+%{__automake}
+%{__autoconf}
 %configure \
 	--disable-silent-rules \
 	--disable-static \
