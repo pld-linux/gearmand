@@ -24,16 +24,16 @@
 
 Summary:	A distributed job system
 Name:		gearmand
-Version:	1.1.12
-Release:	5
+Version:	1.1.18
+Release:	1
 License:	BSD
 Group:		Daemons
-Source0:	https://launchpad.net/gearmand/1.2/%{version}/+download/%{name}-%{version}.tar.gz
-# Source0-md5:	99dd0be85b181eccf7fb1ca3c2a28a9f
+Source0:	https://github.com/gearman/gearmand/archive/%{version}/%{name}-%{version}.tar.gz
+# Source0-md5:	e947647db2a23239cead1c0960f2b5a0
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.service
-Patch0:		%{name}-1.1.12-ppc64le.patch
+Patch0:		no-git.patch
 URL:		http://www.gearman.org
 BuildRequires:	autoconf
 BuildRequires:	autoconf-archive
@@ -111,17 +111,14 @@ Development headers for %{name}.
 %setup -q
 %patch0 -p1
 
-cp -p %{_aclocaldir}/ax_boost_base.m4 m4
-cp -p %{_aclocaldir}/ax_boost_program_options.m4 m4
-
-# somewhy it does not look into build-aux
-ln -s build-aux/install-sh .
+echo "m4_define([VERSION_NUMBER], %{version})" > version.m4
 
 %build
 %{__libtoolize}
-%{__aclocal} -I m4
-%{__automake}
+%{__aclocal}
 %{__autoconf}
+%{__autoheader}
+%{__automake}
 %configure \
 	--disable-silent-rules \
 	--disable-static \
@@ -136,7 +133,8 @@ ln -s build-aux/install-sh .
 	--enable-ssl \
 	--disable-dtrace
 
-%{__make}
+%{__make} -C docs  -j1
+%{__make} -j1
 
 %if %{with tests}
 %{__make} check
@@ -190,7 +188,7 @@ fi
 
 %files
 %defattr(644,root,root,755)
-%doc README
+%doc README.md
 %attr(754,root,root) /etc/rc.d/init.d/gearmand
 %config(noreplace) %verify(not md5 mtime size) /etc/sysconfig/gearmand
 %attr(755,root,root) %{_sbindir}/gearmand

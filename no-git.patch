@@ -1,0 +1,11 @@
+--- gearmand-1.1.18/configure.ac~	2017-12-11 15:00:27.000000000 +0100
++++ gearmand-1.1.18/configure.ac	2018-03-18 23:42:15.334301949 +0100
+@@ -9,7 +9,7 @@
+ # the COPYING file in this directory for full text.
+ 
+ m4_include([version.m4])
+-AC_REVISION([m4_esyscmd_s([git describe --always])])
++AC_REVISION([VERSION_NUMBER])
+ AC_PREREQ([2.63])
+ AC_INIT([gearmand],VERSION_NUMBER,[https://github.com/gearman/gearmand/issues],[gearmand],[http://gearman.info/])
+ 
