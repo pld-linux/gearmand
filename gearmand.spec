@@ -25,7 +25,7 @@
 Summary:	A distributed job system
 Name:		gearmand
 Version:	1.1.18
-Release:	1
+Release:	2
 License:	BSD
 Group:		Daemons
 Source0:	https://github.com/gearman/gearmand/archive/%{version}/%{name}-%{version}.tar.gz
@@ -34,6 +34,7 @@ Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.service
 Patch0:		no-git.patch
+Patch1:		x32.patch
 URL:		http://www.gearman.org
 BuildRequires:	autoconf
 BuildRequires:	autoconf-archive
@@ -110,6 +111,9 @@ Development headers for %{name}.
 %prep
 %setup -q
 %patch0 -p1
+%ifarch x32
+%patch1 -p1
+%endif
 
 echo "m4_define([VERSION_NUMBER], %{version})" > version.m4
 

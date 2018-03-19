@@ -1,0 +1,11 @@
+--- gearmand-1.1.18/m4/ax_boost_base.m4.orig	2017-12-11 15:00:27.000000000 +0100
++++ gearmand-1.1.18/m4/ax_boost_base.m4	2018-03-19 10:55:09.617855982 +0100
+@@ -93,7 +93,7 @@
+     ax_arch=`uname -m`
+     case $ax_arch in
+       x86_64|ppc64|s390x|sparc64|aarch64)
+-        libsubdirs="lib64 lib lib64"
++        libsubdirs="libx32 lib64 lib lib64"
+         ;;
+     esac
+ 
