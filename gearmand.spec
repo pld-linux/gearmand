@@ -25,7 +25,7 @@
 Summary:	A distributed job system
 Name:		gearmand
 Version:	1.1.18
-Release:	2
+Release:	3
 License:	BSD
 Group:		Daemons
 Source0:	https://github.com/gearman/gearmand/archive/%{version}/%{name}-%{version}.tar.gz
