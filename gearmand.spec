@@ -1,24 +1,22 @@
 # TODO
 # - fix make install linking stuff over again
 # - skip tests build if testing disabled
-# - libpq vs postgresql, which one matters?
 # - tmpfiles conf
 # - logrotate
 #
 # Conditional build:
 %bcond_with	tests		# build with tests
 %bcond_without	gperftools	# gperftools
-%bcond_without	sqlite3		# use SQLite 3 library [default=yes]
-%bcond_without	libtokyocabinet	# Build with libtokyocabinet support [default=on]
-%bcond_without	libmemcached	# Build with libmemcached support [default=on]
-%bcond_without	hiredis	# Build with hiredis support [default=on]
-%bcond_without	libpq	# Build with libpq, ie Postgres, support [default=on]
-%bcond_without	mysql	# use MySQL client library [default=yes]
-%bcond_without	postgresql	# use PostgreSQL library [default=yes]
-%bcond_with	libdrizzle	# Build with libdrizzle support [default=on]
+%bcond_without	sqlite3		# use SQLite 3 library
+%bcond_without	tokyocabinet	# libtokyocabinet support
+%bcond_without	memcached	# libmemcached support
+%bcond_without	hiredis		# hiredis support
+%bcond_without	pgsql		# PostgreSQL support via libpq
+%bcond_without	mysql		# MySQL client library
+%bcond_with	libdrizzle	# libdrizzle support
 
 # google perftools available only on these
-%ifnarch %{ix86} x86_64 ppc64 ppc64le aarch64 %{arm}
+%ifnarch %{ix86} %{x8664} ppc64 ppc64le aarch64 %{arm}
 %undefine	with_gperftools
 %endif
 
@@ -36,27 +34,27 @@ Source3:	%{name}.service
 Patch0:		no-git.patch
 Patch1:		x32.patch
 URL:		http://www.gearman.org
-BuildRequires:	autoconf
+BuildRequires:	autoconf >= 2.63
 BuildRequires:	autoconf-archive
-BuildRequires:	automake
-BuildRequires:	boost-devel >= 1.37.0
+BuildRequires:	automake >= 1:1.11
+BuildRequires:	boost-devel >= 1.39
 BuildRequires:	gperf
 %{?with_gperftools:BuildRequires:	gperftools-devel}
 %{?with_hiredis:BuildRequires:	hiredis-devel}
 BuildRequires:	libevent-devel
-%{?with_libmemcached:BuildRequires:	libmemcached-devel}
-BuildRequires:	libtool
+%{?with_memcached:BuildRequires:	libmemcached-devel}
+BuildRequires:	libtool >= 2:2.2
 BuildRequires:	libuuid-devel
 %{?with_mysql:BuildRequires:	mysql-devel}
+BuildRequires:	openssl-devel
 BuildRequires:	pkgconfig
-BuildRequires:	postgresql-devel
-%{?with_libpq:BuildRequires:	postgresql-devel}
+%{?with_pgsql:BuildRequires:	postgresql-devel}
 BuildRequires:	rpmbuild(macros) >= 1.647
 %{?with_sqlite3:BuildRequires:	sqlite3-devel}
 %{?with_tokyocabinet:BuildRequires:	tokyocabinet-devel}
 BuildRequires:	zlib-devel
 %if %{with tests}
-BuildRequires:	curl-devel
+BuildRequires:	curl-devel >= 7.21.7
 BuildRequires:	mysql-server
 %endif
 Provides:	group(gearmand)
@@ -128,11 +126,10 @@ echo "m4_define([VERSION_NUMBER], %{version})" > version.m4
 	--disable-static \
 	%{__enable_disable hiredis} \
 	%{__enable_disable libdrizzle} \
-	%{__enable_disable libmemcached} \
-	%{__enable_disable libpq} \
-	%{__enable_disable libtokyocabinet} \
+	%{__enable_disable memcached libmemcached} \
+	%{__enable_disable pgsql libpq} \
+	%{__enable_disable tokyocabinet libtokyocabinet} \
 	%{__with_without mysql} \
-	%{__with_without postgresql} \
 	%{__with_without sqlite3} \
 	--enable-ssl \
 	--disable-dtrace
