@@ -1,7 +1,6 @@
 # TODO
 # - fix make install linking stuff over again
 # - skip tests build if testing disabled
-# - tmpfiles conf
 # - logrotate
 #
 # Conditional build:
@@ -21,13 +20,15 @@
 %endif
 
 Summary:	A distributed job system
+Summary(pl.UTF-8):	System do rozpraszania zadań
 Name:		gearmand
-Version:	1.1.18
-Release:	6
+Version:	1.1.19.1
+Release:	1
 License:	BSD
 Group:		Daemons
+#Source0Download: https://github.com/gearman/gearmand/releases
 Source0:	https://github.com/gearman/gearmand/archive/%{version}/%{name}-%{version}.tar.gz
-# Source0-md5:	e947647db2a23239cead1c0960f2b5a0
+# Source0-md5:	0c86283d6b82c390659d2bd7de6a9e1b
 Source1:	%{name}.init
 Source2:	%{name}.sysconfig
 Source3:	%{name}.service
@@ -43,6 +44,7 @@ BuildRequires:	gperf
 %{?with_hiredis:BuildRequires:	hiredis-devel}
 BuildRequires:	libevent-devel
 %{?with_memcached:BuildRequires:	libmemcached-devel}
+BuildRequires:	libstdc++-devel >= 6:4.3
 BuildRequires:	libtool >= 2:2.2
 BuildRequires:	libuuid-devel
 %{?with_mysql:BuildRequires:	mysql-devel}
@@ -50,6 +52,7 @@ BuildRequires:	openssl-devel
 BuildRequires:	pkgconfig
 %{?with_pgsql:BuildRequires:	postgresql-devel}
 BuildRequires:	rpmbuild(macros) >= 1.647
+BuildRequires:	sphinx-pdg >= 1.0
 %{?with_sqlite3:BuildRequires:	sqlite3-devel}
 %{?with_tokyocabinet:BuildRequires:	tokyocabinet-devel}
 BuildRequires:	zlib-devel
@@ -67,13 +70,11 @@ Requires(pre):	/bin/id
 Requires(pre):	/usr/bin/getgid
 Requires(pre):	/usr/sbin/groupadd
 Requires(pre):	/usr/sbin/useradd
+Requires:	libgearman = %{version}-%{release}
 Requires:	procps
 Requires:	rc-scripts >= 0.4.0.17
 Requires:	systemd-units >= 0.38
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
-
-# FIXME: add tmpfiles conf
-%define		no_install_post_check_tmpfiles	1
 
 %description
 Gearman provides a generic framework to farm out work to other
@@ -84,19 +85,34 @@ a variety of applications, from high-availability web sites to the
 transport for database replication. In other words, it is the nervous
 system for how distributed processing communicates.
 
+%description -l pl.UTF-8
+Gearman zapewnia ogólny szkielet do rozpraszania zadań na inne maszyny
+lub ekspediowania wywołań funkcji na maszyny lepiej przystosowane do
+danego zadania. Pozwala wykonywać zadania równolegle, równoważyć
+obciążenie oraz wykonywać wywołania funkcji między językami. Może być
+używany w wielu zastosowaniach, od wysoko dostępnych storn WWW do
+transportu na potrzeby replikacji bazy danych. Innymi słowy, jest to
+układ nerwowy, zapewniający komunikację przy przetwarzaniu
+rozproszonym.
+
 %package -n libgearman
-Summary:	Development libraries for gearman
-Group:		Development/Libraries
+Summary:	Shared gearman library
+Summary(pl.UTF-8):	Biblioteka współdzielona gearman
+Group:		Libraries
 Provides:	libgearman-1.0 = %{version}-%{release}
 Obsoletes:	libgearman-1.0 < %{version}-%{release}
 # gearman requires uuid_generate_time_safe, which only exists in newer e2fsprogs-libs
 Requires:	e2fsprogs-libs >= 1.39-32
 
 %description -n libgearman
-Development libraries for %{name}.
+Shared gearman library.
+
+%description -n libgearman -l pl.UTF-8
+Biblioteka współdzielona gearman.
 
 %package -n libgearman-devel
 Summary:	Development headers for libgearman
+Summary(pl.UTF-8):	Pliki nagłówkowe biblioteki libgearman
 Group:		Development/Libraries
 Requires:	libevent-devel
 Requires:	libgearman = %{version}-%{release}
@@ -104,7 +120,10 @@ Provides:	libgearman-1.0-devel = %{version}-%{release}
 Obsoletes:	libgearman-1.0-devel < %{version}-%{release}
 
 %description -n libgearman-devel
-Development headers for %{name}.
+Development headers for libgearman.
+
+%description -n libgearman-devel -l pl.UTF-8
+Pliki nagłówkowe biblioteki libgearman.
 
 %prep
 %setup -q
@@ -143,19 +162,24 @@ echo "m4_define([VERSION_NUMBER], %{version})" > version.m4
 
 %install
 rm -rf $RPM_BUILD_ROOT
+
 %{__make} install \
 	DESTDIR=$RPM_BUILD_ROOT
 
-rm -v $RPM_BUILD_ROOT%{_libdir}/libgearman*.la
+%{__rm} $RPM_BUILD_ROOT%{_libdir}/libgearman*.la
 
 install -d $RPM_BUILD_ROOT/etc/{rc.d/init.d,sysconfig} \
-	$RPM_BUILD_ROOT{%{_sysconfdir}/%{name},%{systemdunitdir}} \
-	$RPM_BUILD_ROOT/var/{run/gearmand,log}
+	$RPM_BUILD_ROOT{%{_sysconfdir}/%{name},%{systemdunitdir},%{systemdtmpfilesdir}} \
+	$RPM_BUILD_ROOT/var/{log,run/gearmand}
 
 cp -p %{SOURCE2} $RPM_BUILD_ROOT/etc/sysconfig/gearmand
 cp -p %{SOURCE3} $RPM_BUILD_ROOT%{systemdunitdir}/%{name}.service
 install -p %{SOURCE1} $RPM_BUILD_ROOT/etc/rc.d/init.d/gearmand
 touch $RPM_BUILD_ROOT/var/log/gearmand.log
+
+cat >$RPM_BUILD_ROOT%{systemdtmpfilesdir}/gearmand.conf <<EOF
+d /var/run/gearmand 0771 root gearmand -
+EOF
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -199,21 +223,21 @@ fi
 %{_mandir}/man1/gearman.1*
 %{_mandir}/man8/gearmand.8*
 %{systemdunitdir}/%{name}.service
+%{systemdtmpfilesdir}/gearmand.conf
 %dir %attr(771,root,gearmand) /var/run/gearmand
 %attr(640,gearmand,gearmand) %config(noreplace) %verify(not md5 mtime size) /var/log/gearmand.log
 
 %files -n libgearman
 %defattr(644,root,root,755)
-%doc COPYING
+%doc AUTHORS COPYING ChangeLog
 %attr(755,root,root) %{_libdir}/libgearman.so.*.*.*
-%ghost %{_libdir}/libgearman.so.8
+%attr(755,root,root) %ghost %{_libdir}/libgearman.so.8
 
 %files -n libgearman-devel
 %defattr(644,root,root,755)
-%doc AUTHORS ChangeLog
+%attr(755,root,root) %{_libdir}/libgearman.so
 %{_includedir}/libgearman
-%{_pkgconfigdir}/gearmand.pc
-%{_libdir}/libgearman.so
 %{_includedir}/libgearman-1.0
-%{_mandir}/man3/gearman_*
+%{_pkgconfigdir}/gearmand.pc
+%{_mandir}/man3/gearman_*.3*
 %{_mandir}/man3/libgearman.3*
