@@ -23,7 +23,7 @@ Summary:	A distributed job system
 Summary(pl.UTF-8):	System do rozpraszania zadań
 Name:		gearmand
 Version:	1.1.19.1
-Release:	3
+Release:	4
 License:	BSD
 Group:		Daemons
 #Source0Download: https://github.com/gearman/gearmand/releases
