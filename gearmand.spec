@@ -150,6 +150,7 @@ echo "m4_define([VERSION_NUMBER], %{version})" > version.m4
 	%{__enable_disable tokyocabinet libtokyocabinet} \
 	%{__with_without mysql} \
 	%{__with_without sqlite3} \
+	--disable-wolfssl \
 	--enable-ssl \
 	--disable-dtrace
 
