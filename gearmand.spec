@@ -127,9 +127,9 @@ Pliki nagłówkowe biblioteki libgearman.
 
 %prep
 %setup -q
-%patch0 -p1
+%patch -P0 -p1
 %ifarch x32
-%patch1 -p1
+%patch -P1 -p1
 %endif
 
 echo "m4_define([VERSION_NUMBER], %{version})" > version.m4
